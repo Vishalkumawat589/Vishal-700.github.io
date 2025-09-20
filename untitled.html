@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hanuman Marble Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 15px;
+            background-color: #f4f4f4;
+            font-size: 14px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            color: #2c3e50;
+        }
+        .header p {
+            margin: 0;
+            color: #7f8c8d;
+            font-weight: bold;
+        }
+        /* Style for the new live date and time */
+        .header #live-datetime {
+            font-size: 13px;
+            color: #333;
+            font-weight: normal;
+            margin-top: 5px;
+        }
+        .calculator-container {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 15px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        .block-row, .header-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            gap: 8px;
+        }
+        .header-row > div {
+            font-weight: bold;
+            color: #34495e;
+            text-align: center;
+        }
+        .block-row input {
+            width: 100%;
+            padding: 8px 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: right;
+            font-size: 14px;
+        }
+        .block-row input::placeholder {
+            color: #bdc3c7;
+            text-align: center;
+        }
+        .block-row .name { flex: 2; }
+        .block-row .length, .block-row .breadth, .block-row .quantity, .block-row .rate {
+            flex: 1;
+        }
+        .block-row .total-price {
+            flex: 1.5;
+            background-color: #ecf0f1;
+            font-weight: bold;
+            border: 1px solid #bdc3c7;
+        }
+        .header-row .name-header { flex: 2; }
+        .header-row .length-header, .header-row .breadth-header, .header-row .quantity-header, .header-row .rate-header {
+            flex: 1;
+        }
+        .header-row .price-header { flex: 1.5; }
+
+        #addBlockBtn {
+            width: 100%;
+            padding: 10px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        #addBlockBtn:hover {
+            background-color: #2980b9;
+        }
+        .footer-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 2px solid #3498db;
+        }
+        .contact-info {
+            font-size: 12px;
+            color: #555;
+            line-height: 1.5;
+        }
+        .grand-total-container {
+            text-align: right;
+            flex-shrink: 0; 
+            margin-left: 15px; 
+        }
+        .grand-total-container #grandTotal {
+            font-size: 24px;
+            font-weight: bold;
+            color: #c0392b;
+            padding: 8px 12px;
+            background-color: #f2f2f2;
+            border-radius: 5px;
+        }
+        .default-rate-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: flex-end;
+            margin-bottom: 15px;
+        }
+        .default-rate-container label {
+            font-weight: bold;
+        }
+        .default-rate-container input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 120px;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+
+<div class="calculator-container">
+    <div class="header">
+        <h1>Hanuman Marble</h1>
+        <p>Sardar Nagar</p>
+        <p id="live-datetime"></p>
+    </div>
+
+    <div class="default-rate-container">
+        <label for="defaultRate">Default Rate (दर):</label>
+        <input type="number" id="defaultRate" placeholder="Set default">
+    </div>
+
+    <div class="header-row">
+        <div class="name-header">Name (नाम)</div>
+        <div class="length-header">Length (लंबाई)</div>
+        <div class="breadth-header">Breadth (चौड़ाई)</div>
+        <div class="quantity-header">Quantity (मात्रा)</div>
+        <div class="rate-header">Rate (दर)</div>
+        <div class="price-header">Total</div>
+    </div>
+
+    <div id="blocks-container">
+        </div>
+
+    <button id="addBlockBtn">Add New Block</button>
+
+    <div class="footer-section">
+        <div class="contact-info">
+            <strong>Dinesh Kumawat:</strong> 9950798501<br>
+            <strong>Omprakash Kumawat:</strong> 9414838503
+        </div>
+        <div class="grand-total-container">
+            <span>Grand Total: ₹</span>
+            <span id="grandTotal">0.00</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    const blocksContainer = document.getElementById('blocks-container');
+    const addBlockBtn = document.getElementById('addBlockBtn');
+    const grandTotalElement = document.getElementById('grandTotal');
+    const defaultRateInput = document.getElementById('defaultRate');
+    
+    // ADDED: Get the new date-time element
+    const dateTimeElement = document.getElementById('live-datetime');
+
+    const calculateTotal = () => {
+        let grandTotal = 0;
+        const rows = blocksContainer.querySelectorAll('.block-row');
+        rows.forEach(row => {
+            const length = parseFloat(row.querySelector('.length').value) || 0;
+            const breadth = parseFloat(row.querySelector('.breadth').value) || 0;
+            const quantity = parseInt(row.querySelector('.quantity').value) || 0;
+            const rate = parseFloat(row.querySelector('.rate').value) || 0;
+
+            const totalPrice = (length * breadth * quantity * rate);
+            row.querySelector('.total-price').value = totalPrice.toFixed(2);
+            grandTotal += totalPrice;
+        });
+        grandTotalElement.textContent = grandTotal.toFixed(2);
+    };
+
+    const addBlock = () => {
+        const blockRow = document.createElement('div');
+        blockRow.className = 'block-row';
+        
+        const currentDefaultRate = defaultRateInput.value;
+
+        blockRow.innerHTML = `
+            <input type="text" class="name" placeholder="Block Name (Optional)">
+            <input type="number" class="length" placeholder="लंबाई">
+            <input type="number" class="breadth" placeholder="चौड़ाई">
+            <input type="number" class="quantity" placeholder="मात्रा" value="1">
+            <input type="number" class="rate" placeholder="दर" value="${currentDefaultRate}">
+            <input type="text" class="total-price" placeholder="Total" readonly>
+        `;
+        blocksContainer.appendChild(blockRow);
+    };
+
+    const applyDefaultRate = () => {
+        const defaultRate = defaultRateInput.value;
+        const allRateInputs = blocksContainer.querySelectorAll('.rate');
+        allRateInputs.forEach(input => {
+            input.value = defaultRate;
+        });
+        calculateTotal();
+    };
+
+    // ADDED: Function to update the date and time display
+    const updateDateTime = () => {
+        const now = new Date();
+        // Formats the date and time according to the user's local settings
+        // e.g., "9/19/2025, 3:47:53 PM"
+        dateTimeElement.textContent = now.toLocaleString();
+    };
+
+    defaultRateInput.addEventListener('input', applyDefaultRate);
+
+    blocksContainer.addEventListener('input', (e) => {
+        if (e.target.tagName === 'INPUT') {
+            calculateTotal();
+        }
+    });
+
+    addBlockBtn.addEventListener('click', addBlock);
+    
+    // Start with one block
+    addBlock();
+
+    // ADDED: Update the time every second (1000 milliseconds)
+    setInterval(updateDateTime, 1000);
+
+    // ADDED: Call the function immediately on load so it appears right away
+    updateDateTime();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "Hanuman Marble Calculator",
+  "short_name": "MarbleCalc",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3498db",
+  "description": "A calculator for Hanuman Marble.",
+  "icons": [
+    {
+      "src": "icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
