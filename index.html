@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hanuman Marble Calculator</title>
   <style>
-    /* ... (CSS STYLES REMAINS THE SAME AS PREVIOUS CODE BLOCK) ... */
     * { box-sizing: border-box; }
     body {
       font-family: Arial, sans-serif;
@@ -158,24 +157,46 @@
     const addSundryBtn = document.getElementById('addSundryBtn');
     const grandTotalElement = document.getElementById('grandTotal');
     const dateTimeElement = document.getElementById('live-datetime');
-    const billContainer = document.getElementById('bill-container'); // Reference to the main content
+    const billContainer = document.getElementById('bill-container');
 
-    // === CONSTANTS AND LOGIC (SAME AS PREVIOUSLY CONFIRMED) ===
-    const MIN_DIMENSION_INCHES = 9; 
-    const ROUNDING_STEP_INCHES = 3; 
+    // === CONSTANTS FOR PIECEWISE LOGIC (in INCHES) ===
+    const CASE_1_THRESHOLD = 9;  // L < 9
+    const CASE_2_THRESHOLD = 24; // 9 <= L < 24
+    const CASE_3_THRESHOLD = 25; // 24 <= L < 25
     
-    const calculateBillableDimension = (requiredDimensionInches) => {
-        if (requiredDimensionInches <= 0) return 0;
+    // Note: The previous ROUNDING_STEP_INCHES (3) is now embedded in Case 2.
+
+    /**
+     * Calculates the billable dimension (x) in FEET using the piecewise formula.
+     * @param {number} requiredInch - The length or breadth required by the customer (L in inches).
+     * @returns {number} The billable dimension (x) in feet.
+     */
+    const calculateBillableDimension = (requiredInch) => {
+        if (requiredInch <= 0) return 0;
         
-        if (requiredDimensionInches < MIN_DIMENSION_INCHES) {
-            return MIN_DIMENSION_INCHES / 12;
+        let billableInch = 0;
+
+        if (requiredInch < CASE_1_THRESHOLD) {
+            // Case 1: L < 9 (inches) -> x = 9
+            billableInch = 9;
+        
+        } else if (requiredInch < CASE_2_THRESHOLD) {
+            // Case 2: 9 <= L < 24 (inches) -> x = (floor(L/3) + 1) * 3
+            // This is the 3-inch rounding rule we previously confirmed.
+            billableInch = (Math.floor(requiredInch / 3) + 1) * 3;
+            
+        } else if (requiredInch < CASE_3_THRESHOLD) {
+            // Case 3: 24 <= L < 25 (inches) -> x = 24
+            billableInch = 24;
+
+        } else { // L >= 25
+            // Case 4: L >= 25 (inches) -> x = (floor((L-1)/6) + 1) * 6
+            // This applies a 6-inch rounding step (starting 1 inch lower)
+            billableInch = (Math.floor((requiredInch - 1) / 6) + 1) * 6;
         }
 
-        const divisionResult = requiredDimensionInches / ROUNDING_STEP_INCHES;
-        const greatestInteger = Math.floor(divisionResult);
-        const billableDimensionInches = (greatestInteger + 1) * ROUNDING_STEP_INCHES;
-        
-        return billableDimensionInches / 12;
+        // Convert the final billable dimension from INCHES to FEET
+        return billableInch / 12;
     };
 
     const calculateTotal = () => {
@@ -203,6 +224,7 @@
 
             singlePieceBillableArea = billableLengthFeet * billableBreadthFeet;
 
+            // Display the single piece area UP TO 4 DECIMAL PLACES
             row.querySelector('.area-used').value = singlePieceBillableArea.toFixed(4);
 
             totalPrice = singlePieceBillableArea * quantity * rate;
@@ -211,6 +233,7 @@
         row.querySelector('.total-price').value = totalPrice.toFixed(2);
         grandTotal += totalPrice;
       });
+      // Display Grand Total UP TO 2 DECIMAL PLACES
       grandTotalElement.textContent = grandTotal.toFixed(2);
     };
 
@@ -267,15 +290,21 @@
       dateTimeElement.textContent = now.toLocaleString('en-IN', options);
     };
 
-    // === NEW SHARE FUNCTION FOR OPTION 1A ===
+    // === SHARE FUNCTION (REQUIRES html2canvas) ===
     const shareBill = () => {
+        // Check for html2canvas availability
+        if (typeof html2canvas === 'undefined') {
+            alert('Sharing library is not available. Please try the Print option or check your internet connection.');
+            return;
+        }
+
         // Temporarily hide buttons for a clean screenshot
         const buttons = document.querySelectorAll('.add-buttons button, .delete-btn, .share-btn');
         buttons.forEach(btn => btn.style.display = 'none');
 
         // Use html2canvas to render the bill container to a canvas
         html2canvas(billContainer, { 
-            scale: 2, // Use higher resolution for better quality
+            scale: 2, 
             allowTaint: true,
             useCORS: true 
         }).then(canvas => {
@@ -283,7 +312,7 @@
             buttons.forEach(btn => btn.style.display = '');
 
             // Check for Web Share API support
-            if (navigator.share) {
+            if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([''], 'test.png', { type: 'image/png' })] })) {
                 // Convert canvas to a blob (file format)
                 canvas.toBlob(blob => {
                     const file = new File([blob], "HanumanMarbleBill.png", { type: "image/png" });
@@ -295,8 +324,8 @@
                     }).catch(error => console.error('Sharing failed:', error));
                 }, 'image/png');
             } else {
-                // Fallback for browsers without Web Share API (opens image in new tab)
-                alert("Sharing failed. Your browser does not support native sharing. Image will open in a new tab.");
+                // Fallback for browsers without Web Share API
+                alert("Sharing failed. Your browser does not fully support native image sharing. Image will open in a new tab.");
                 const dataURL = canvas.toDataURL('image/png');
                 window.open(dataURL, '_blank');
             }
