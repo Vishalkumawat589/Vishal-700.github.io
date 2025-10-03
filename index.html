@@ -17,6 +17,19 @@
     .header h1 { margin: 0; color: #2c3e50; }
     .header p { margin: 0; color: #7f8c8d; font-weight: bold; }
     .header #live-datetime { font-size: 13px; color: #333; margin-top: 5px; }
+    /* Style for the visitor counter */
+    #visitor-counter-container {
+        margin-top: 10px;
+        text-align: center;
+        font-size: 12px;
+        color: #555;
+    }
+    /* Style for the local counter text (if used for testing) */
+    #local-visitor-count {
+        font-size: 14px;
+        font-weight: bold;
+        color: #e67e22; 
+    }
     .calculator-container {
       width: 100%;
       max-width: 950px;
@@ -117,6 +130,12 @@
       <h1>Hanuman Marble</h1>
       <p>Sardar Nagar</p>
       <p id="live-datetime"></p>
+      
+      <div id="visitor-counter-container">
+        <a href='https://www.free-counters.org/'>Free-Counters.org</a> 
+        <script type='text/javascript' src='https://www.freevisitorcounters.com/auth.php?id=d34d48aa6a6c975fb7cf2409331148fd83bdb11c'></script>
+        <script type="text/javascript" src="https://www.freevisitorcounters.com/en/home/counter/1401257/t/10"></script>
+        </div>
     </div>
 
     <div class="header-row">
@@ -158,14 +177,15 @@
     const grandTotalElement = document.getElementById('grandTotal');
     const dateTimeElement = document.getElementById('live-datetime');
     const billContainer = document.getElementById('bill-container');
+    
+    // You can remove this reference if you removed the local-visitor-count span earlier
+    // const localCountElement = document.getElementById('local-visitor-count'); 
 
     // === CONSTANTS FOR PIECEWISE LOGIC (in INCHES) ===
     const CASE_1_THRESHOLD = 9;  // L < 9
     const CASE_2_THRESHOLD = 24; // 9 <= L < 24
     const CASE_3_THRESHOLD = 25; // 24 <= L < 25
     
-    // Note: The previous ROUNDING_STEP_INCHES (3) is now embedded in Case 2.
-
     /**
      * Calculates the billable dimension (x) in FEET using the piecewise formula.
      * @param {number} requiredInch - The length or breadth required by the customer (L in inches).
@@ -182,7 +202,6 @@
         
         } else if (requiredInch < CASE_2_THRESHOLD) {
             // Case 2: 9 <= L < 24 (inches) -> x = (floor(L/3) + 1) * 3
-            // This is the 3-inch rounding rule we previously confirmed.
             billableInch = (Math.floor(requiredInch / 3) + 1) * 3;
             
         } else if (requiredInch < CASE_3_THRESHOLD) {
@@ -191,7 +210,6 @@
 
         } else { // L >= 25
             // Case 4: L >= 25 (inches) -> x = (floor((L-1)/6) + 1) * 6
-            // This applies a 6-inch rounding step (starting 1 inch lower)
             billableInch = (Math.floor((requiredInch - 1) / 6) + 1) * 6;
         }
 
@@ -301,6 +319,10 @@
         // Temporarily hide buttons for a clean screenshot
         const buttons = document.querySelectorAll('.add-buttons button, .delete-btn, .share-btn');
         buttons.forEach(btn => btn.style.display = 'none');
+        
+        // Hide the counter during screenshot to avoid issues with external content
+        const counter = document.getElementById('visitor-counter-container');
+        if (counter) counter.style.display = 'none';
 
         // Use html2canvas to render the bill container to a canvas
         html2canvas(billContainer, { 
@@ -310,6 +332,7 @@
         }).then(canvas => {
             // Re-show buttons immediately
             buttons.forEach(btn => btn.style.display = '');
+            if (counter) counter.style.display = '';
 
             // Check for Web Share API support
             if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([''], 'test.png', { type: 'image/png' })] })) {
@@ -333,6 +356,7 @@
             console.error('Error generating canvas:', error);
             // Re-show buttons on failure
             buttons.forEach(btn => btn.style.display = '');
+            if (counter) counter.style.display = '';
             alert('Could not generate image for sharing.');
         });
     };
